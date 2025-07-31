@@ -1,0 +1,25 @@
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @* RedirectToLogin artık ayrı bir bileşen dosyası *@
+                    @if (!context.User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <p class="text-center text-red-500 mt-8">Bu sayfaya erişim yetkiniz yok.</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <PageTitle>Bulunamadı</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p class="text-center text-red-500 mt-8">Üzgünüz, bu adreste hiçbir şey yok.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

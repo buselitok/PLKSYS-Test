@@ -1,0 +1,49 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\bin\\Debug\\net9.0\\wwwroot\\_framework\\blazor.webassembly.js",
+      "PackagePath": "staticwebassets\\_framework\\blazor.webassembly.js"
+    },
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\wwwroot\\css\\tailwind.css",
+      "PackagePath": "staticwebassets\\css\\tailwind.css"
+    },
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\wwwroot\\css\\tailwind.min.css",
+      "PackagePath": "staticwebassets\\css\\tailwind.min.css"
+    },
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\wwwroot\\icon-192.png",
+      "PackagePath": "staticwebassets\\icon-192.png"
+    },
+    {
+      "Id": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.PLKSYS.Client.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.PLKSYS.Client.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.build.PLKSYS.Client.props",
+      "PackagePath": "build\\PLKSYS.Client.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.buildMultiTargeting.PLKSYS.Client.props",
+      "PackagePath": "buildMultiTargeting\\PLKSYS.Client.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.buildTransitive.PLKSYS.Client.props",
+      "PackagePath": "buildTransitive\\PLKSYS.Client.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

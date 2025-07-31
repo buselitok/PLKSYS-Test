@@ -1,0 +1,18 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using PLKSYS.Client
+@using PLKSYS.Client.Shared
+@using ClientServices = PLKSYS.Client.Services @* Client tarafındaki servisler için takma ad (alias) *@
+@using PLKSYS.Client.Pages @* RedirectToLogin ve diğer sayfalar için *@
+@using PLKSYS.Core.Models @* Modeller PLKSYS.Core projesinde olduğu için bu using gerekli. *@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json // JSON işlemleri için
+@using System.Text.Json.Serialization // JSON öznitelikleri için
+@using Microsoft.AspNetCore.Authorization // Authorize attribute için eklendi

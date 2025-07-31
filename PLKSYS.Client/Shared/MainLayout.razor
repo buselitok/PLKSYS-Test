@@ -1,0 +1,79 @@
+﻿@inherits LayoutComponentBase
+
+<div class="min-h-screen flex flex-col bg-gray-500 font-sans text-gray-100">
+    <header class="bg-white border-b border-gray-100 shadow-md px-6 h-24 flex items-center justify-between relative z-10">
+        <!-- Sol taraf: Menü butonu -->
+        <div class="flex items-center space-x-4 z-20">
+            <button @onclick="ToggleMenu" class="p-2 rounded-md hover:bg-gray-100 text-gray-800 transition duration-300">
+                @if (isMenuOpen)
+                {
+                    @* Menü açıkken 'kapat' ikonu (X) - Lucide Icon *@
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                }
+                else
+                {
+                    @* Menü kapalıyken 'aç' ikonu (Hamburger) - Lucide Icon *@
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu">
+                        <line x1="4" x2="20" y1="12" y2="12"></line>
+                        <line x1="4" x2="20" y1="6" y2="6"></line>
+                        <line x1="4" x2="20" y1="18" y2="18"></line>
+                    </svg>
+                }
+            </button>
+        </div>
+
+        <!-- Ortada: Başlık (Absolute konumlandırma ile tam ortalandı) -->
+        <div class="absolute left-1/2 transform -translate-x-1/2 z-0">
+            <h1 class="text-3xl font-bold text-red-600 tracking-wide">
+                TOYOTA YÖNETİM SİSTEMİ
+            </h1>
+        </div>
+
+        <!-- Sağ taraf: Kullanıcı adı ve buton -->
+        <div class="flex items-center space-x-4 z-20">
+            <AuthorizeView>
+                <Authorized>
+                    <span class="text-sm text-gray-700 whitespace-nowrap">Hoş Geldiniz, <strong>@context.User.Identity?.Name</strong></span>
+                    <button @onclick="Logout"
+                            class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 shadow-sm">
+                        Çıkış Yap
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="/login"
+                             class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-300 shadow-sm">
+                        Giriş Yap
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </header>
+
+    @* Flex konteyneri, header'dan sonra kalan yüksekliği kaplar *@
+    <div class="flex flex-1 h-[calc(100vh-6rem)] overflow-hidden">
+        @* h-24 = 6rem *@
+        <NavMenu IsOpen="@isMenuOpen" />
+
+        <main class="flex-1 p-6 overflow-y-auto bg-gray-100 shadow-inner rounded-tl-2xl">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private bool isMenuOpen = true; // Menü başlangıçta açık
+
+    [Inject] public ClientServices.AuthService AuthService { get; set; } = default!;
+    [Inject] public NavigationManager NavigationManager { get; set; } = default!;
+
+    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        NavigationManager.NavigateTo("/login");
+    }
+}

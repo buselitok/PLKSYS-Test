@@ -1,0 +1,68 @@
+﻿@page "/servis/send-to-washing"
+@using PLKSYS.Core.Models
+@using PLKSYS.Client.Services
+@inject WashingService WashingService
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Admin,Superadmin,Servis,Satış,Sigorta, Muhasebe, Müşteriİlişkileri")]
+
+<PageTitle>Yıkamaya Gönder</PageTitle>
+
+<h3 class="mt-6 text-3xl font-bold mb-6 text-sky-800 text-center">Aracı Yıkamaya Gönder</h3>
+
+<div class="mt-6 sm:mt-16 md:mt-24 lg:mt-32 bg-sky-50 p-8 rounded-2xl text-red-600 shadow-xl max-w-lg mx-auto border border-sky-100">
+    <EditForm Model="@washingEntryDto" OnValidSubmit="@HandleValidSubmit" FormName="SendToWashingForm" class="space-y-6">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div>
+            <label for="plateNumber" class="block text-base font-semibold text-sky-900 mb-2">Plaka Numarası</label>
+            <InputText id="plateNumber" @bind-Value="washingEntryDto.PlateNumber"
+                       class="block w-full px-4 py-3 border border-sky-300 rounded-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base bg-white" />
+        </div>
+
+        <button type="submit"
+                class="w-full flex justify-center py-3 px-5 rounded-lg shadow text-base font-semibold text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400 transition duration-200">
+            🚿 Yıkama Kuyruğuna Ekle
+        </button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="mt-6 p-4 rounded-md text-base font-medium @(isSuccess ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800")">
+            @message
+        </div>
+    }
+</div>
+
+
+@code {
+    private WashingQueueEntryCreateDto washingEntryDto = new WashingQueueEntryCreateDto();
+    private string message = string.Empty;
+    private bool isSuccess = true;
+
+    private async Task HandleValidSubmit()
+    {
+        message = string.Empty;
+        try
+        {
+            var result = await WashingService.SendToWashingAsync(washingEntryDto);
+            if (result != null)
+            {
+                isSuccess = true;
+                message = $"Araç '{result.PlateNumber}' yıkama kuyruğuna başarıyla eklendi.";
+                washingEntryDto = new WashingQueueEntryCreateDto(); // Formu sıfırla
+            }
+            else
+            {
+                isSuccess = false;
+                message = "Araç yıkama kuyruğuna eklenirken bir hata oluştu.";
+            }
+        }
+        catch (Exception ex)
+        {
+            isSuccess = false;
+            message = $"Bir hata oluştu: Bu araç plazada değil!";
+            Console.WriteLine($"Error sending to washing: {ex.Message}");
+        }
+    }
+}

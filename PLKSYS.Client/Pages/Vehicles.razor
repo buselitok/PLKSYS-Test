@@ -1,0 +1,435 @@
+﻿@* Pages/Vehicles.razor *@
+@* Araç giriş/çıkışını yönetme ve araçları görüntüleme sayfası. *@
+@page "/vehicles"
+@attribute [Authorize(Roles = "Superadmin,Admin,Servis,Satış,Sigorta, Muhasebe, Müşteriİlişkileri,Güvenlik")]
+@using PLKSYS.Client.Services
+@using PLKSYS.Core.Interfaces
+@using PLKSYS.Core.Models @* Modeller için *@
+@using System.Security.Claims @* ClaimTypes için *@
+@using System.Net.Http @* HttpRequestException için *@
+@using System.Net.Http.Json
+@using System.Text.Json
+@using PLKSYS.Core.Services
+@inject PLKSYS.Client.Services.VehicleService vehicleService
+
+@inject HttpClient HttpClient
+
+
+
+
+<PageTitle>Araç Yönetimi</PageTitle>
+
+<h1 class="text-4xl font-extrabold text-gray-900 mb-8">Araç Yönetimi</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@errorMessage</span>
+    </div>
+}
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@successMessage</span>
+    </div>
+}
+
+
+
+@* Plazadaki Canlı Araçlar *@
+<div class="p-6 bg-white rounded-lg shadow-md mb-8">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Plazadaki Araçlar</h2>
+    @if (liveVehicles == null)
+    {
+        <p>Canlı araçlar yükleniyor...</p>
+    }
+    else if (!liveVehicles.Any())
+    {
+        <p class="text-gray-600">Plazada şu anda araç bulunmamaktadır.</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Plaka</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Müşteri</th>
+                        
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Giriş Zamanı</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Randevu</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Servis Tipi</th> 
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Sigorta</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">İlgilenen</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var vehicle in liveVehicles)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm text-gray-800 font-medium">@vehicle.PlateNumber</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@vehicle.CustomerName</td>
+                           
+                            <td class="py-3 px-4 text-sm text-gray-800">@vehicle.LastEntryTime.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">
+                                @(vehicle.HasAppointment ? vehicle.AppointmentDate?.ToLocalTime().ToString("dd.MM.yyyy") : "Yok")
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@(vehicle.ServiceType ?? "Belirtilmemiş")</td> 
+                            <td class="py-3 px-4 text-sm text-gray-800">@vehicle.InsuranceStatus</td>
+
+                            @if (vehicle.ClaimedByUserId.HasValue)
+                            {
+                                <td class="text-xs text-green-600">✓ @vehicle.ClaimedByUserName tarafından @vehicle.ClaimedAt?.ToLocalTime().ToString("HH:mm")'de üstlenildi</td>
+                            }
+
+                            @*<td class="py-3 px-4 text-sm text-gray-800 flex space-x-2">
+                                <button @onclick="() => ShowNotesModal(vehicle)"
+                                class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Notlar (@vehicle.Notes.Count)
+                                </button>
+                                <button @onclick="() => ShowAddNoteModal(vehicle.PlateNumber)"
+                                class="bg-purple-500 hover:bg-purple-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Not Ekle
+                                </button>
+
+                            </td>*@
+                            
+
+                            
+
+
+                        </tr>
+                        
+                    }
+
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@* Araç Geçmişi/Logları *@
+<div class="p-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Araç Geçmişi (Tüm Kayıtlar)</h2>
+    @if (vehicleLogs == null)
+    {
+        <p>Araç geçmişi yükleniyor...</p>
+    }
+    else if (!vehicleLogs.Any())
+    {
+        <p class="text-gray-600">Henüz araç geçmişi kaydı bulunmamaktadır.</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Plaka</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Müşteri</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Giriş Zamanı</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Çıkış Zamanı</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Servis Tipi</th> @* Yeni sütun *@
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Durum</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var vehicle in vehicleLogs)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm text-gray-800 font-medium">@vehicle.PlateNumber</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@vehicle.CustomerName</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@vehicle.LastEntryTime.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@(vehicle.LastExitTime?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "N/A")</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@(vehicle.ServiceType ?? "Belirtilmemiş")</td> @* Yeni sütun değeri *@
+                            <td class="py-3 px-4 text-sm text-gray-800">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold @GetStatusClass(vehicle.CurrentStatus)">
+                                    @vehicle.CurrentStatus
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800 flex space-x-2">
+                                <button @onclick="() => ShowNotesModal(vehicle)"
+                                class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Notlar (@vehicle.Notes.Count)
+                                </button>
+                                <button @onclick="() => ShowAddNoteModal(vehicle.PlateNumber)"
+                                class="bg-purple-500 hover:bg-purple-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Not Ekle
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+
+@* Notları Görüntüleme Modalı *@
+@if (showNotesModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">@selectedVehicle?.PlateNumber Notları</h3>
+            @if (selectedVehicleNotes == null)
+            {
+                <p>Notlar yükleniyor...</p>
+            }
+            else if (!selectedVehicleNotes.Any())
+            {
+                <p class="text-gray-600">Bu araç için henüz not bulunmamaktadır.</p>
+            }
+            else
+            {
+                <div class="max-h-96 overflow-y-auto mb-4 border border-gray-200 rounded-md p-2">
+                    @foreach (var note in selectedVehicleNotes)
+                    {
+                        <div class="bg-gray-50 p-3 rounded-md mb-2 border border-gray-100">
+                            <p class="text-sm text-gray-600">
+                                <span class="font-semibold">@note.Department</span> tarafından
+                                <span class="font-semibold">@note.UserId</span> (@note.Timestamp.ToLocalTime().ToString("dd.MM.yyyy HH:mm")):
+                            </p>
+                            <p class="text-gray-800 mt-1">@note.NoteContent</p>
+                        </div>
+                    }
+                </div>
+            }
+            <div class="flex justify-end">
+                <button @onclick="CloseNotesModal"
+                class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@* Not Ekleme Modalı *@
+@if (showAddNoteModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">@newNote.PlateNumber İçin Not Ekle</h3>
+            <EditForm Model="@newNote" OnValidSubmit="HandleAddNote" FormName="addNoteForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-red-500 text-sm mb-4" />
+
+                <div class="mb-4">
+                    <label for="noteContent" class="block text-gray-700 text-sm font-bold mb-2">Not İçeriği:</label>
+                    <InputTextArea id="noteContent" @bind-Value="newNote.NoteContent" rows="5" TValue="string"
+                    class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => newNote.NoteContent)" class="text-red-500 text-xs italic" />
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @onclick="CloseAddNoteModal"
+                    class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        İptal
+                    </button>
+                    <button type="submit"
+                    class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        Not Ekle
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+
+@code {
+    // Servisleri burada özellik olarak tanımlayın
+    [Inject]
+    public ClientServices.VehicleService VehicleService { get; set; } = default!;
+    [Inject]
+    public ClientServices.NoteService NoteService { get; set; } = default!;
+    [Inject]
+    public IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject]
+    public AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+
+
+    private List<Vehicle>? liveVehicles;
+    private List<Vehicle>? vehicleLogs;
+    private PlateEntryRequest plateEntryRequest = new PlateEntryRequest();
+    private PlateEntryRequest plateExitRequest = new PlateEntryRequest();
+    private string? errorMessage;
+    private string? successMessage;
+
+    // Not modalı için
+    private bool showNotesModal = false;
+    private Vehicle? selectedVehicle;
+    private List<Note>? selectedVehicleNotes;
+
+    // Not ekleme modalı için
+    private bool showAddNoteModal = false;
+    private NoteCreateDto newNote = new NoteCreateDto();
+    private string? currentUserId;
+    private string? currentUserDepartment;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Kullanıcının ID'sini ve departmanını al
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        liveVehicles = await vehicleService.GetLiveVehicles(); 
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            currentUserDepartment = user.FindFirst("Department")?.Value;
+        }
+
+        await LoadVehicles();
+    }
+
+
+    
+
+    private async Task LoadVehicles()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            // Servis metotlarını doğru şekilde çağırın (özellik üzerinden)
+            liveVehicles = await VehicleService.GetLiveVehicles();
+            vehicleLogs = await VehicleService.GetVehicleLogs();
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Bu sayfayı görüntülemeye veya araç verilerini yüklemeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+            Console.WriteLine($"Authorization Error: {httpEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Araç verileri yüklenirken hata oluştu: {ex.Message}";
+            Console.WriteLine($"Error loading vehicles: {ex.Message}");
+        }
+    }
+
+    private async Task HandleVehicleEntry()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            // Servis metotlarını doğru şekilde çağırın (özellik üzerinden)
+            var enteredVehicle = await VehicleService.RegisterVehicleEntry(plateEntryRequest);
+            successMessage = $"Plaka '{enteredVehicle?.PlateNumber}' başarıyla giriş yaptı.";
+            plateEntryRequest = new PlateEntryRequest(); // Formu temizle
+            await LoadVehicles();
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Araç girişi kaydetmeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Araç girişi kaydedilirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private async Task HandleVehicleExit()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            // Servis metotlarını doğru şekilde çağırın (özellik üzerinden)
+            var exitedVehicle = await VehicleService.RegisterVehicleExit(plateExitRequest);
+            successMessage = $"Plaka '{exitedVehicle?.PlateNumber}' başarıyla çıkış yaptı.";
+            plateExitRequest = new PlateEntryRequest(); // Formu temizle
+            await LoadVehicles();
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Araç çıkışı kaydetmeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Araç çıkışı kaydedilirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "in" => "bg-green-100 text-green-800",
+            "out" => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800",
+        };
+    }
+
+    // Notları Görüntüleme Modalı Metotları
+    private async Task ShowNotesModal(Vehicle vehicle)
+    {
+        selectedVehicle = vehicle;
+        // Notları API'den tekrar çekmek daha güncel veriyi sağlar
+        try
+        {
+            
+            selectedVehicleNotes = await NoteService.GetNotesByPlate(vehicle.PlateNumber);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Notlar yüklenirken hata oluştu: {ex.Message}";
+            selectedVehicleNotes = new List<Note>(); // Hata durumunda boş liste göster
+        }
+        showNotesModal = true;
+    }
+
+    private void CloseNotesModal()
+    {
+        showNotesModal = false;
+        selectedVehicle = null;
+        selectedVehicleNotes = null;
+    }
+
+    // Not Ekleme Modalı Metotları
+    private void ShowAddNoteModal(string plateNumber)
+    {
+        newNote = new NoteCreateDto { PlateNumber = plateNumber };
+        showAddNoteModal = true;
+    }
+
+    private async Task HandleAddNote()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrEmpty(currentUserId) || string.IsNullOrEmpty(currentUserDepartment))
+        {
+            errorMessage = "Kullanıcı bilgileri eksik. Lütfen tekrar giriş yapmayı deneyin.";
+            return;
+        }
+
+        try
+        {
+            
+            await NoteService.CreateNote(newNote);
+            successMessage = $"Not başarıyla eklendi!";
+            CloseAddNoteModal();
+            await LoadVehicles(); // Not eklendikten sonra araç listesini yenile
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Not eklemeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Not eklenirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private void CloseAddNoteModal()
+    {
+        showAddNoteModal = false;
+        newNote = new NoteCreateDto(); // Formu temizle
+    }
+}

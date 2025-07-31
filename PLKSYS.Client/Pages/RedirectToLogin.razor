@@ -1,0 +1,10 @@
+﻿@inject NavigationManager Navigation 
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Bu bileşen render edildiğinde doğrudan /login sayfasına yönlendir.
+        // Bu bir sayfa olmadığı için, routerda rota çakışmasına neden olmaz.
+        Navigation.NavigateTo("/login");
+    }
+}

@@ -1,0 +1,14 @@
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\bin\Debug\net9.0\PLKSYS.Core.deps.json
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\bin\Debug\net9.0\PLKSYS.Core.runtimeconfig.json
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\bin\Debug\net9.0\PLKSYS.Core.dll
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\bin\Debug\net9.0\PLKSYS.Core.pdb
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.csproj.AssemblyReference.cache
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.AssemblyInfoInputs.cache
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.AssemblyInfo.cs
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.csproj.CoreCompileInputs.cache
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.dll
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\refint\PLKSYS.Core.dll
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.pdb
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\PLKSYS.Core.genruntimeconfig.cache
+C:\Users\buselitok\PLKSYS\PLKSYS.Core\obj\Debug\net9.0\ref\PLKSYS.Core.dll

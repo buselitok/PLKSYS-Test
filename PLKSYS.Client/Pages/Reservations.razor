@@ -1,0 +1,327 @@
+﻿@* Pages/Reservations.razor *@
+@* Rezervasyonları görüntüleme ve yönetme. *@
+@page "/reservations"
+@attribute [Authorize(Roles = "Admin,Superadmin,Servis,Satış,Sigorta, Muhasebe, MüşteriTemsilcisi")]
+@inject ClientServices.ReservationService ReservationService
+@inject NavigationManager NavigationManager
+
+
+@inject IJSRuntime JSRuntime // confirm için eklendi
+
+<PageTitle>Toyota Rezervasyonları</PageTitle>
+
+<h1 class="text-4xl font-extrabold text-gray-900 mb-8">Toyota Rezervasyon Yönetimi</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@errorMessage</span>
+    </div>
+}
+
+<div class="mb-8 p-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Yeni Rezervasyon Ekle</h2>
+    <EditForm Model="@newReservation" OnValidSubmit="HandleAddReservation" FormName="addReservationForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-red-500 text-sm mb-4" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="plateNumberRes" class="block text-gray-700 text-sm font-bold mb-2">Plaka Numarası:</label>
+                <InputText id="plateNumberRes" @bind-Value="newReservation.PlateNumber"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newReservation.PlateNumber)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="customerNameRes" class="block text-gray-700 text-sm font-bold mb-2">Müşteri Adı:</label>
+                <InputText id="customerNameRes" @bind-Value="newReservation.CustomerName"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newReservation.CustomerName)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="serviceTypeRes" class="block text-gray-700 text-sm font-bold mb-2">Hizmet Türü:</label>
+                @* InputText yerine InputSelect kullanıldı *@
+                <InputSelect id="serviceTypeRes" @bind-Value="newReservation.ServiceType" TValue="string"
+                             class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <option value="">Seçiniz...</option>
+                    <option value="Periyodik Bakım">Periyodik Bakım</option>
+                    <option value="Hasar Onarım">Hasar Onarım</option>
+                    <option value="Lastik Değişimi">Lastik Değişimi</option>
+                    <option value="Yeni Araç Satış">Yeni Araç Satış</option>
+                    <option value="Kasko Yenileme">Kasko Yenileme</option>
+                    <option value="Diğer">Diğer</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => newReservation.ServiceType)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="reservationDateTimeRes" class="block text-gray-700 text-sm font-bold mb-2">Rezervasyon Tarih/Saat:</label>
+                <InputDate id="reservationDateTimeRes" @bind-Value="newReservation.ReservationDateTime" TValue="DateTime"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newReservation.ReservationDateTime)" class="text-red-500 text-xs italic" />
+            </div>
+        </div>
+        <div class="mb-4">
+            <label for="notesRes" class="block text-gray-700 text-sm font-bold mb-2">Notlar (Opsiyonel):</label>
+            <InputTextArea id="notesRes" @bind-Value="newReservation.Notes" rows="3"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+            <ValidationMessage For="@(() => newReservation.Notes)" class="text-red-500 text-xs italic" />
+        </div>
+
+        <button type="submit"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+            Rezervasyon Ekle
+        </button>
+    </EditForm>
+</div>
+
+<div class="p-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Tüm Rezervasyonlar</h2>
+    @if (reservations == null)
+    {
+        <p>Rezervasyonlar yükleniyor...</p>
+    }
+    else if (!reservations.Any())
+    {
+        <p class="text-gray-600">Henüz rezervasyon bulunmamaktadır.</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Plaka</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Müşteri</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Tarih/Saat</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Hizmet</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Durum</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var res in reservations)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm text-gray-800 font-medium">@res.PlateNumber</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@res.CustomerName</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@res.ReservationDateTime.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@res.ServiceType</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold @GetStatusClass(res.Status)">
+                                    @res.Status
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800 flex space-x-2">
+                                <button @onclick="() => ShowEditReservationModal(res)"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Düzenle
+                                </button>
+                                <button @onclick="() => DeleteReservation(res.Id)"
+                                        class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Sil
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@* Rezervasyon Düzenleme Modalı *@
+@if (showEditReservationModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Rezervasyon Düzenle</h3>
+            <EditForm Model="@editReservation" OnValidSubmit="HandleUpdateReservation" FormName="editReservationForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-red-500 text-sm mb-4" />
+
+                <div class="mb-4">
+                    <label for="editPlateNumber" class="block text-gray-700 text-sm font-bold mb-2">Plaka Numarası:</label>
+                    <InputText id="editPlateNumber" @bind-Value="editReservation.PlateNumber"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editReservation.PlateNumber)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editCustomerName" class="block text-gray-700 text-sm font-bold mb-2">Müşteri Adı:</label>
+                    <InputText id="editCustomerName" @bind-Value="editReservation.CustomerName"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editReservation.CustomerName)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editServiceType" class="block text-gray-700 text-sm font-bold mb-2">Hizmet Türü:</label>
+                    @* InputText yerine InputSelect kullanıldı *@
+                    <InputSelect id="editServiceType" @bind-Value="editReservation.ServiceType" TValue="string"
+                                 class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <option value="">Seçiniz...</option>
+                        <option value="Periyodik Bakım">Periyodik Bakım</option>
+                        <option value="Hasar Onarım">Hasar Onarım</option>
+                        <option value="Lastik Değişimi">Lastik Değişimi</option>
+                        <option value="Yeni Araç Satış">Yeni Araç Satış</option>
+                        <option value="Kasko Yenileme">Kasko Yenileme</option>
+                        <option value="Diğer">Diğer</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => editReservation.ServiceType)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editReservationDateTime" class="block text-gray-700 text-sm font-bold mb-2">Rezervasyon Tarih/Saat:</label>
+                    <InputDate id="editReservationDateTime" @bind-Value="editReservation.ReservationDateTime" TValue="DateTime"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editReservation.ReservationDateTime)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editNotes" class="block text-gray-700 text-sm font-bold mb-2">Notlar (Opsiyonel):</label>
+                    <InputTextArea id="editNotes" @bind-Value="editReservation.Notes" rows="3"
+                                   class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editReservation.Notes)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-6">
+                    <label for="editStatus" class="block text-gray-700 text-sm font-bold mb-2">Durum:</label>
+                    <InputSelect id="editStatus" @bind-Value="editReservation.Status" TValue="string"
+                                 class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <option value="Onaylandı">Onaylandı</option>
+                        <option value="Tamamlandı">Tamamlandı</option>
+                        <option value="İptal Edildi">İptal Edildi</option>
+                        <option value="Beklemede">Beklemede</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => editReservation.Status)" class="text-red-500 text-xs italic" />
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @onclick="CloseEditReservationModal"
+                            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        İptal
+                    </button>
+                    <button type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        Kaydet
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Reservation>? reservations;
+    private ReservationCreateDto newReservation = new ReservationCreateDto();
+    private ReservationUpdateDto editReservation = new ReservationUpdateDto();
+    private string? errorMessage;
+    private bool showEditReservationModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        newReservation.ReservationDateTime = DateTime.Today.AddHours(9); // Varsayılan başlangıç saati
+        await LoadReservations();
+    }
+
+    private async Task LoadReservations()
+    {
+        try
+        {
+            reservations = await ReservationService.GetAllReservations();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Rezervasyonlar yüklenirken hata oluştu: {ex.Message}";
+        }
+    }
+
+    private async Task HandleAddReservation()
+    {
+        errorMessage = null;
+        try
+        {
+            await ReservationService.CreateReservation(newReservation);
+            errorMessage = "Rezervasyon başarıyla eklendi!";
+            newReservation = new ReservationCreateDto { ReservationDateTime = DateTime.Today.AddHours(9) }; // Formu temizle
+            await LoadReservations();
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Rezervasyon eklemeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Rezervasyon eklenirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteReservation(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu rezervasyonu silmek istediğinizden emin misiniz?"))
+        {
+            errorMessage = null;
+            try
+            {
+                await ReservationService.DeleteReservation(id);
+                errorMessage = "Rezervasyon başarıyla silindi!";
+                await LoadReservations();
+            }
+            catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                errorMessage = "Rezervasyon silmeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Rezervasyon silinirken bir hata oluştu: {ex.Message}";
+            }
+        }
+    }
+
+    private void ShowEditReservationModal(Reservation reservation)
+    {
+        editReservation = new ReservationUpdateDto
+            {
+                Id = reservation.Id,
+                PlateNumber = reservation.PlateNumber,
+                CustomerName = reservation.CustomerName,
+                ReservationDateTime = reservation.ReservationDateTime,
+                ServiceType = reservation.ServiceType,
+                Notes = reservation.Notes,
+                Status = reservation.Status
+            };
+        showEditReservationModal = true;
+    }
+
+    private async Task HandleUpdateReservation()
+    {
+        errorMessage = null;
+        try
+        {
+            await ReservationService.UpdateReservation(editReservation);
+            errorMessage = "Rezervasyon başarıyla güncellendi!";
+            CloseEditReservationModal();
+            await LoadReservations();
+        }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.Unauthorized || httpEx.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            errorMessage = "Rezervasyon güncellemeye yetkiniz yok. Lütfen giriş yaptığınızdan ve doğru role sahip olduğunuzdan emin olun.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Rezervasyon güncellenirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private void CloseEditReservationModal()
+    {
+        showEditReservationModal = false;
+        editReservation = new ReservationUpdateDto(); // Formu sıfırla
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Onaylandı" => "bg-blue-100 text-blue-800", // Onaylandı için mavi
+            "Tamamlandı" => "bg-green-100 text-green-800", // Tamamlandı için yeşil
+            "İptal" => "bg-red-100 text-red-800", // İptal edildi için kırmızı
+            "Beklemede" => "bg-yellow-100 text-yellow-800", // Beklemede için sarı
+            _ => "bg-gray-100 text-gray-800",
+        };
+    }
+}

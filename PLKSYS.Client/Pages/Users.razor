@@ -1,0 +1,342 @@
+﻿@* Pages/Users.razor *@
+@* Kullanıcı yönetimi (sadece Admin/Superadmin). *@
+@page "/users"
+@using PLKSYS.Client.Services
+@attribute [Authorize(Roles = "Admin,Superadmin")]
+@inject UserService UserService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Kullanıcı Yönetimi</PageTitle>
+
+<h1 class="text-4xl font-extrabold text-gray-900 mb-8">Kullanıcı Yönetimi</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@errorMessage</span>
+    </div>
+}
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@successMessage</span>
+    </div>
+}
+
+<div class="mb-8 p-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Yeni Kullanıcı Ekle</h2>
+    <EditForm Model="@newUser" OnValidSubmit="HandleAddUser" FormName="addUserForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-red-500 text-sm mb-4" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Kullanıcı Adı:</label>
+                <InputText id="username" @bind-Value="newUser.Username"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newUser.Username)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Şifre:</label>
+                <InputText id="password" @bind-Value="newUser.Password" type="password"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newUser.Password)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="firstName" class="block text-gray-700 text-sm font-bold mb-2">Ad:</label>
+                <InputText id="firstName" @bind-Value="newUser.FirstName"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newUser.FirstName)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="lastName" class="block text-gray-700 text-sm font-bold mb-2">Soyad:</label>
+                <InputText id="lastName" @bind-Value="newUser.LastName"
+                           class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <ValidationMessage For="@(() => newUser.LastName)" class="text-red-500 text-xs italic" />
+            </div>
+            <div>
+                <label for="department" class="block text-gray-700 text-sm font-bold mb-2">Departman:</label>
+                <InputSelect id="department" @bind-Value="newUser.Department" TValue="string"
+                             class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="Servis">Servis</option>
+                    <option value="Satış">Satış</option>
+                    <option value="Sigorta">Sigorta</option>
+                    <option value="Security">Security</option> @* Yeni departman eklendi *@
+                    <option value="Admin">Admin</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => newUser.Department)" class="text-red-500 text-xs italic" />
+            </div>
+            
+        </div>
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+            Kullanıcı Ekle
+        </button>
+    </EditForm>
+</div>
+
+<div class="p-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Sistem Kullanıcıları</h2>
+    @if (users == null)
+    {
+        <p>Kullanıcılar yükleniyor...</p>
+    }
+    else if (!users.Any())
+    {
+        <p class="text-gray-600">Sistemde henüz kullanıcı bulunmamaktadır.</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Kullanıcı Adı</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Ad Soyad</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Departman</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Rol</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm text-gray-800">@user.Id</td>
+                            <td class="py-3 px-4 text-sm text-gray-800 font-medium">@user.Username</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@user.FirstName @user.LastName</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">@user.Department</td>
+
+                            <td class="py-3 px-4 text-sm text-gray-800 flex space-x-2">
+                                <button @onclick="() => ShowEditUserModal(user)"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                    Düzenle
+                                </button>
+                                @if (user.Id != currentUserId) @* Kullanıcı kendi hesabını silemesin *@
+                                {
+                                    <button @onclick="() => DeleteUser(user.Id)"
+                                            class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-xs transition duration-300">
+                                        Sil
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@* Kullanıcı Düzenleme Modalı *@
+@if (showEditUserModal)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Kullanıcı Düzenle</h3>
+            <EditForm Model="@editUser" OnValidSubmit="HandleUpdateUser" FormName="editUserForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-red-500 text-sm mb-4" />
+
+                <div class="mb-4">
+                    <label for="editUsername" class="block text-gray-700 text-sm font-bold mb-2">Kullanıcı Adı:</label>
+                    <InputText id="editUsername" @bind-Value="editUser.Username"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editUser.Username)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editFirstName" class="block text-gray-700 text-sm font-bold mb-2">Ad:</label>
+                    <InputText id="editFirstName" @bind-Value="editUser.FirstName"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editUser.FirstName)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editLastName" class="block text-gray-700 text-sm font-bold mb-2">Soyad:</label>
+                    <InputText id="editLastName" @bind-Value="editUser.LastName"
+                               class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <ValidationMessage For="@(() => editUser.LastName)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-4">
+                    <label for="editDepartment" class="block text-gray-700 text-sm font-bold mb-2">Departman:</label>
+                    <InputSelect id="editDepartment" @bind-Value="editUser.Department" TValue="string"
+                                 class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Birim Seçiniz</option>
+                        <option value="Servis">Servis</option>
+                        <option value="Satış">Satış</option>
+                        <option value="Sigorta">Sigorta</option>
+                        <option value="Muhasebe">Muhasebe</option>
+                        <option value="Yıkama">Yıkama</option>
+                        <option value="Güvenlik">Güvenlik</option>
+                        <option value="Müşteritemsilcisi">Müşteri Temsilcisi</option>
+                        <option value="Yönetim">Yönetim</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => editUser.Department)" class="text-red-500 text-xs italic" />
+                </div>
+                <div class="mb-6">
+                    <label for="editRole" class="block text-gray-700 text-sm font-bold mb-2">Rol:</label>
+                    <InputSelect id="editRole" @bind-Value="editUser.Department" TValue="string"
+                                 class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="User">User</option>
+                        <option value="Güvenlik">Güvenlik</option> @* Yeni rol eklendi *@
+                        <option value="Admin">Admin</option>
+                        @if (currentUserDepartment.Contains("Superadmin")) // Sadece Superadmin rolünü değiştirebilir
+                        {
+                            <option value="Superadmin">Superadmin</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => editUser.Department)" class="text-red-500 text-xs italic" />
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @onclick="CloseEditUserModal"
+                            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        İptal
+                    </button>
+                    <button type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                        Kaydet
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<User>? users;
+    private UserCreateDto newUser = new UserCreateDto();
+    private UserUpdateDto editUser = new UserUpdateDto();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool showEditUserModal = false;
+    private int currentUserId; // Giriş yapan kullanıcının ID'si
+    private List<string> currentUserDepartment = new List<string>(); // Giriş yapan kullanıcının rolleri
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            // Kullanıcının ID'sini ve rollerini al
+            currentUserId = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            currentUserDepartment = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+        }
+
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            users = await UserService.GetUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Kullanıcılar yüklenirken hata oluştu: {ex.Message}";
+        }
+    }
+
+    private async Task HandleAddUser()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            await UserService.CreateUser(newUser);
+            successMessage = "Kullanıcı başarıyla eklendi!";
+            newUser = new UserCreateDto(); // Formu temizle
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Kullanıcı eklenirken bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        // Kullanıcının kendi hesabını silmesini engelle
+        if (id == currentUserId)
+        {
+            errorMessage = "Kendi hesabınızı silemezsiniz.";
+            return;
+        }
+
+        // Admin'in Superadmin veya başka bir Admin'i silmesini engelle
+        if (currentUserDepartment.Contains("Admin"))
+        {
+            var userToDelete = users?.FirstOrDefault(u => u.Id == id);
+            if (userToDelete != null && (userToDelete.Department == "Admin" || userToDelete.Department == "Superadmin"))
+            {
+                errorMessage = "Bir Admin, Admin veya Superadmin rolündeki kullanıcıları silemez.";
+                return;
+            }
+        }
+
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu kullanıcıyı silmek istediğinizden emin misiniz?"))
+        {
+            errorMessage = null;
+            successMessage = null;
+            try
+            {
+                await UserService.DeleteUser(id);
+                successMessage = "Kullanıcı başarıyla silindi!";
+                await LoadUsers();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Kullanıcı silinirken bir hata oluştu: {ex.Message}";
+            }
+        }
+    }
+
+    private void ShowEditUserModal(User user)
+    {
+        editUser = new UserUpdateDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Department = user.Department,
+
+            };
+        showEditUserModal = true;
+    }
+
+    private async Task HandleUpdateUser()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            // Eğer mevcut kullanıcı Admin ise ve Superadmin rolünü değiştirmeye çalışıyorsa engelle
+            if (currentUserDepartment.Contains("Admin") && editUser.Department == "Superadmin")
+            {
+                errorMessage = "Admin rolündeki bir kullanıcı, bir kullanıcının rolünü Superadmin olarak değiştiremez.";
+                return;
+            }
+
+            await UserService.UpdateUser(editUser);
+            successMessage = "Kullanıcı başarıyla güncellendi!";
+            CloseEditUserModal();
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Kullanıcı güncellenirken beklenmeyen bir hata oluştu: {ex.Message}";
+        }
+    }
+
+    private void CloseEditUserModal()
+    {
+        showEditUserModal = false;
+        editUser = new UserUpdateDto(); // Formu sıfırla
+    }
+}

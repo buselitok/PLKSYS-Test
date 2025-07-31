@@ -1,0 +1,459 @@
+﻿@page "/"
+@page "/index"
+@using PLKSYS.Client.Services
+@using System.Linq;
+@attribute [Authorize(Roles = "Admin, Superadmin, Servis, Satış, Sigorta, Muhasebe, Müşteriİlişkileri")]
+@inject VehicleService VehicleService
+@inject ReservationService ReservationService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Ana Sayfa</PageTitle>
+
+<h1 class="text-4xl font-extrabold text-gray-900 mb-8">Toyota Kontrol Paneli</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@errorMessage</span>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <span class="block sm:inline">@successMessage</span>
+    </div>
+}
+
+@* Departmana Özel Bildirimler ve Widget'lar *@
+<div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">Departman Bildirimleri</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        @if (currentUserDepartment == "Servis")
+        {
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                <h3 class="text-xl font-semibold text-blue-700 mb-3">Randevulu Gelen Araçlar (Servis)</h3>
+                @{
+                    var serviceVehicles = liveVehicles?.Where(v => v.HasAppointment &&
+                    (v.ServiceType == "Periyodik Bakım" ||
+                    v.ServiceType == "Hasar Onarım" ||
+                    v.ServiceType == "Lastik Değişimi" ||
+                    v.ServiceType == "Diğer")).ToList();
+                }
+                @if (serviceVehicles != null && serviceVehicles.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var vehicle in serviceVehicles)
+                        {
+                            <div class="border border-gray-200 rounded-lg p-4 @(vehicle.ClaimedByUserId.HasValue ? "bg-gray-50" : "bg-blue-50")">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-900">@vehicle.PlateNumber</h4>
+                                        <p class="text-gray-700">@vehicle.CustomerName</p>
+                                        <p class="text-sm text-gray-600">@vehicle.ServiceType</p>
+                                        <p class="text-xs text-gray-500">@vehicle.AppointmentDate?.ToLocalTime().ToString("dd.MM HH:mm")</p>
+
+                                        @if (vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <div class="mt-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    ✓ @vehicle.ClaimedByUserName tarafından üstlenildi
+                                                </span>
+                                                <p class="text-xs text-gray-500 mt-1">@vehicle.ClaimedAt?.ToLocalTime().ToString("HH:mm")'de üstlenildi</p>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="ml-4">
+                                        @if (!vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <button @onclick="() => ClaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                @if (isProcessing)
+                                                {
+                                                    <span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></span>
+                                                }
+                                                İlgileneceğim
+                                            </button>
+                                            
+                                        }
+                                        else if (vehicle.ClaimedByUserId == currentUserId)
+                                        {
+                                            <button @onclick="() => UnclaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                Bırak
+                                            </button>
+                                        }
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-gray-600">Servis randevusu olan yeni gelen araç bulunmamaktadır.</p>
+                }
+                <button @onclick="@(() => NavigationManager.NavigateTo("/vehicles"))"
+                        class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                    Tüm Araçları Görüntüle
+                </button>
+            </div>
+        }
+
+        @if (currentUserDepartment == "Satış")
+        {
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                <h3 class="text-xl font-semibold text-green-700 mb-3">Satış Potansiyeli Olan Araçlar</h3>
+                @{
+                    var salesVehicles = liveVehicles?.Where(v => v.HasAppointment && v.ServiceType == "Yeni Araç Satış").ToList();
+                }
+                @if (salesVehicles != null && salesVehicles.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var vehicle in salesVehicles)
+                        {
+                            <div class="border border-gray-200 rounded-lg p-4 @(vehicle.ClaimedByUserId.HasValue ? "bg-gray-50" : "bg-green-50")">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-900">@vehicle.PlateNumber</h4>
+                                        <p class="text-gray-700">@vehicle.CustomerName</p>
+                                        <p class="text-sm text-gray-600">@vehicle.ServiceType</p>
+                                        <p class="text-xs text-gray-500">@vehicle.AppointmentDate?.ToLocalTime().ToString("dd.MM HH:mm")</p>
+                                        
+
+                                        @if (vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <div class="mt-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    ✓ @vehicle.ClaimedByUserName tarafından üstlenildi
+                                                </span>
+                                                <p class="text-xs text-gray-500 mt-1">@vehicle.ClaimedAt?.ToLocalTime().ToString("HH:mm")'de üstlenildi</p>
+                                            </div>
+                                        }
+                                    </div>
+                                    
+
+                                    <div class="ml-4">
+                                        @if (!vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <button @onclick="() => ClaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                @if (isProcessing)
+                                                {
+                                                    <span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></span>
+                                                }
+                                                İlgileneceğim
+                                            </button>
+                                            
+                                        }
+                                        else if (vehicle.ClaimedByUserId == currentUserId)
+                                        {
+                                            <button @onclick="() => UnclaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                Bırak
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-gray-600">Yeni araç satış randevusu olan araç bulunmamaktadır.</p>
+                }
+                <button @onclick="@(() => NavigationManager.NavigateTo("/vehicles"))"
+                        class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                    Tüm Araçları Görüntüle
+                </button>
+            </div>
+        }
+
+        @if (currentUserDepartment == "Sigorta")
+        {
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+                <h3 class="text-xl font-semibold text-purple-700 mb-3">Sigorta Potansiyeli Olan Araçlar</h3>
+                @{
+                    var insuranceVehicles = liveVehicles?.Where(v => v.HasAppointment && v.ServiceType == "Kasko Yenileme").ToList();
+                }
+                @if (insuranceVehicles != null && insuranceVehicles.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var vehicle in insuranceVehicles)
+                        {
+                            <div class="border border-gray-200 rounded-lg p-4 @(vehicle.ClaimedByUserId.HasValue ? "bg-gray-50" : "bg-purple-50")">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-900">@vehicle.PlateNumber</h4>
+                                        <p class="text-gray-700">@vehicle.CustomerName</p>
+                                        <p class="text-sm text-gray-600">@vehicle.ServiceType</p>
+                                        <p class="text-xs text-gray-500">@vehicle.AppointmentDate?.ToLocalTime().ToString("dd.MM HH:mm")</p>
+
+                                        @if (vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <div class="mt-2">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    ✓ @vehicle.ClaimedByUserName tarafından üstlenildi
+                                                </span>
+                                                <p class="text-xs text-gray-500 mt-1">@vehicle.ClaimedAt?.ToLocalTime().ToString("HH:mm")'de üstlenildi</p>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="ml-4">
+                                        @if (!vehicle.ClaimedByUserId.HasValue)
+                                        {
+                                            <button @onclick="() => ClaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                @if (isProcessing)
+                                                {
+                                                    <span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></span>
+                                                }
+                                                İlgileneceğim
+                                            </button>
+                                        }
+                                        else if (vehicle.ClaimedByUserId == currentUserId)
+                                        {
+                                            <button @onclick="() => UnclaimVehicle(vehicle.PlateNumber)"
+                                                    disabled="@isProcessing"
+                                                    class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium py-2 px-3 rounded-md transition duration-200">
+                                                Bırak
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-gray-600">Kasko yenileme randevusu olan araç bulunmamaktadır.</p>
+                }
+                <button @onclick="@(() => NavigationManager.NavigateTo("/vehicles"))"
+                        class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                    Tüm Araçları Görüntüle
+                </button>
+            </div>
+        }
+
+        @* Genel Bilgi Widget'ları (Tüm departmanlar için) *@
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Plazadaki Araçlar</h2>
+            <p class="text-gray-700 text-lg">Güncel olarak plazamızda bulunan araçları görüntüleyin.</p>
+            <button @onclick="@(() => NavigationManager.NavigateTo("/vehicles"))"
+                    class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                Araçları Görüntüle
+            </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-green-700 mb-4">Yaklaşan Rezervasyonlar</h2>
+            <p class="text-gray-700 text-lg">Bugün ve yakın tarihteki rezervasyonları takip edin.</p>
+            <button @onclick="@(() => NavigationManager.NavigateTo("/reservations"))"
+                    class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                Rezervasyonları Görüntüle
+            </button>
+        </div>
+
+        <AuthorizeView Roles="Admin,Superadmin">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-purple-700 mb-4">Kullanıcı Yönetimi</h2>
+                <p class="text-gray-700 text-lg">Sistemdeki kullanıcı hesaplarını yönetin.</p>
+                <button @onclick="@(() => NavigationManager.NavigateTo("/users"))"
+                        class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-sm transition duration-300">
+                    Kullanıcıları Yönet
+                </button>
+            </div>
+        </AuthorizeView>
+    </div>
+</div>
+
+@* Genel Bakış Widget'ları  *@
+<div class="mt-10">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">Genel Bakış</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Aktif Araç Sayısı</h3>
+            <p class="text-4xl font-bold text-blue-600">@(liveVehicles?.Count ?? 0)</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Bugünkü Rezervasyon Sayısı</h3>
+            <p class="text-4xl font-bold text-green-600">@(todayReservations?.Count ?? 0)</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<PLKSYS.Core.Models.Vehicle>? liveVehicles;
+    private List<PLKSYS.Core.Models.Reservation>? todayReservations;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? currentUserDepartment;
+    private int? currentUserId;
+    private string? currentUserName;
+    private bool isProcessing = false;
+
+   
+
+protected override async Task OnInitializedAsync()
+{
+    var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
+    
+    if (user.Identity?.IsAuthenticated ?? false)
+    {
+        // Department claim'ini al
+        currentUserDepartment = user.FindFirst("Department")?.Value ?? user.FindFirst("department")?.Value;
+        
+        // Username claim'ini al
+        currentUserName = user.FindFirst(ClaimTypes.Name)?.Value ?? user.Identity.Name;
+        
+        // UserId claim'ini al ve parse et
+        var userIdString = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userIdString) && int.TryParse(userIdString, out int parsedUserId))
+        {
+            currentUserId = parsedUserId;
+        }
+        else
+        {
+            currentUserId = null;
+        }
+    }
+    else
+    {
+        // Kullanıcı authenticate değilse değerleri temizle
+        currentUserId = null;
+        currentUserName = null;
+        currentUserDepartment = null;
+    }
+    
+    await LoadData();
+}
+
+    private async Task LoadData()
+    {
+        try
+        {
+            liveVehicles = await VehicleService.GetLiveVehicles();
+            todayReservations = await ReservationService.GetUpcomingReservations(DateTime.Today);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Veri yüklenirken hata oluştu: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    
+
+    private async Task ClaimVehicle(string plateNumber)
+{
+    await JSRuntime.InvokeVoidAsync("console.log", $"ClaimVehicle çağrıldı: {plateNumber}");
+    
+    if (isProcessing || !currentUserId.HasValue || string.IsNullOrEmpty(currentUserName))
+    {
+        await JSRuntime.InvokeVoidAsync("console.log", "Koşul hatası", new { isProcessing, currentUserId, currentUserName });
+        return;
+    }
+    
+    isProcessing = true;
+    errorMessage = null;
+    successMessage = null;
+    StateHasChanged();
+    
+    try
+    {
+        
+        await JSRuntime.InvokeVoidAsync("console.log", "Service çağrılıyor...", new { 
+            plateNumber, 
+            userId = currentUserId.Value,  
+            currentUserName 
+        });
+        
+        // DÜZELTME: currentUserId.Value kullan
+        var result = await VehicleService.ClaimVehicleAsync(plateNumber, currentUserId.Value, currentUserName);
+        
+        await JSRuntime.InvokeVoidAsync("console.log", $"Service sonucu: {result}");
+        
+        if (result)
+        {
+            successMessage = $"{plateNumber} plakalı araç başarıyla üzerinize alındı!";
+            await LoadData();
+            
+            // Debug: Claim sonrası kontrol
+            await JSRuntime.InvokeVoidAsync("console.log", $"Claim sonrası currentUserId: {currentUserId}");
+        }
+        else
+        {
+            errorMessage = "Araç üzerinize alınamadı. Başka biri daha önce almış olabilir.";
+        }
+    }
+    catch (Exception ex)
+    {
+        await JSRuntime.InvokeVoidAsync("console.log", $"Hata: {ex.Message}");
+        errorMessage = $"Hata oluştu: {ex.Message}";
+    }
+    finally
+    {
+        isProcessing = false;
+        StateHasChanged();
+        await Task.Delay(3000);
+        successMessage = null;
+        errorMessage = null;
+        StateHasChanged();
+    }
+}
+
+    private async Task UnclaimVehicle(string plateNumber)
+    {
+        if (isProcessing || !currentUserId.HasValue)
+            return;
+
+        isProcessing = true;
+        errorMessage = null;
+        successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await VehicleService.UnclaimVehicleAsync(plateNumber, currentUserId.Value);
+
+            if (result)
+            {
+                successMessage = $"{plateNumber} plakalı araç başarıyla bırakıldı!";
+                await LoadData(); // Listeyi yenile
+            }
+            else
+            {
+                errorMessage = "Araç bırakılamadı.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Hata oluştu: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+
+            // 3 saniye sonra mesajları temizle
+            await Task.Delay(3000);
+            successMessage = null;
+            errorMessage = null;
+            StateHasChanged();
+        }
+    }
+}

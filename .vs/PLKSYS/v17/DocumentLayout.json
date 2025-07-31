@@ -1,0 +1,123 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\buselitok\\PLKSYS\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{28F37D91-48D5-4693-8822-098A44382DE1}|PLKSYS.Client\\PLKSYS.Client.csproj|c:\\users\\buselitok\\plksys\\plksys.client\\pages\\customer.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{28F37D91-48D5-4693-8822-098A44382DE1}|PLKSYS.Client\\PLKSYS.Client.csproj|solutionrelative:plksys.client\\pages\\customer.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{10A555BF-8B33-4BEE-AC7C-E435C5A9F266}|PLKSYS.API\\PLKSYS.API.csproj|c:\\users\\buselitok\\plksys\\plksys.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{10A555BF-8B33-4BEE-AC7C-E435C5A9F266}|PLKSYS.API\\PLKSYS.API.csproj|solutionrelative:plksys.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67E4F6E5-9648-4AB3-963B-3FF1EB94A28F}|PLKSYS.Core\\PLKSYS.Core.csproj|c:\\users\\buselitok\\plksys\\plksys.core\\models\\customer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67E4F6E5-9648-4AB3-963B-3FF1EB94A28F}|PLKSYS.Core\\PLKSYS.Core.csproj|solutionrelative:plksys.core\\models\\customer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{28F37D91-48D5-4693-8822-098A44382DE1}|PLKSYS.Client\\PLKSYS.Client.csproj|c:\\users\\buselitok\\plksys\\plksys.client\\models\\note.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{28F37D91-48D5-4693-8822-098A44382DE1}|PLKSYS.Client\\PLKSYS.Client.csproj|solutionrelative:plksys.client\\models\\note.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Customer.razor",
+              "DocumentMoniker": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\Pages\\Customer.razor",
+              "RelativeDocumentMoniker": "PLKSYS.Client\\Pages\\Customer.razor",
+              "ToolTip": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\Pages\\Customer.razor",
+              "RelativeToolTip": "PLKSYS.Client\\Pages\\Customer.razor",
+              "ViewState": "AgIAACwBAAAAAAAAAAAAAEsBAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-07-31T11:40:24.778Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.API\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "PLKSYS.API\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.API\\Properties\\launchSettings.json",
+              "RelativeToolTip": "PLKSYS.API\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-07-31T10:56:48.639Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Note.cs",
+              "DocumentMoniker": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\Models\\Note.cs",
+              "RelativeDocumentMoniker": "PLKSYS.Client\\Models\\Note.cs",
+              "ToolTip": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Client\\Models\\Note.cs",
+              "RelativeToolTip": "PLKSYS.Client\\Models\\Note.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T17:27:22.151Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Customer.cs",
+              "DocumentMoniker": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Core\\Models\\Customer.cs",
+              "RelativeDocumentMoniker": "PLKSYS.Core\\Models\\Customer.cs",
+              "ToolTip": "C:\\Users\\buselitok\\PLKSYS\\PLKSYS.Core\\Models\\Customer.cs",
+              "RelativeToolTip": "PLKSYS.Core\\Models\\Customer.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAswDMAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T16:40:26.23Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 689,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:33:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:25:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:28:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:30:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:34:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:35:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:38:0:{e8034f19-ab72-4f06-83fd-f6832b41aa63}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
